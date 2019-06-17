@@ -2,18 +2,25 @@ package me.crafter.mc.lockettepro;
 
 import com.bekvon.bukkit.residence.Residence;
 import com.bekvon.bukkit.residence.protection.FlagPermissions;
+import com.github.intellectualsites.plotsquared.api.PlotAPI;
+import com.github.intellectualsites.plotsquared.plot.object.Plot;
+import com.palmergames.bukkit.towny.object.*;
+import com.palmergames.bukkit.towny.utils.PlayerCacheUtil;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import me.ryanhamshire.GriefPrevention.Claim;
+import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import net.milkbowl.vault.permission.Permission;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scoreboard.Team;
 
-
 import java.lang.reflect.Method;
+import java.util.UUID;
 
 /**
  * All the codes which corresponds to the other plugin has been removed for the success build.
@@ -32,9 +39,7 @@ public class Dependency {
     protected static Permission permission = null;
     protected static Plugin askyblock = null;
     protected static Plugin plotsquared = null;
-    //	protected static PlotAPI plotapi;
-    protected static Plugin simpleclans = null;
-    //	protected static ClanManager clanmanager = null;
+    protected static PlotAPI plotapi;
     protected static Plugin griefprevention = null;
 
     public Dependency(Plugin plugin) {
@@ -49,8 +54,6 @@ public class Dependency {
         residence = plugin.getServer().getPluginManager().getPlugin("Residence");
         // Towny
         towny = plugin.getServer().getPluginManager().getPlugin("Towny");
-        // Factions
-        factions = plugin.getServer().getPluginManager().getPlugin("Factions");
         // Vault
         vault = plugin.getServer().getPluginManager().getPlugin("Vault");
         if (vault != null) {
@@ -62,12 +65,7 @@ public class Dependency {
         // PlotSquared
         plotsquared = plugin.getServer().getPluginManager().getPlugin("PlotSquared");
         if (plotsquared != null) {
-//	    	plotapi = new PlotAPI();
-        }
-        // SimpleClans
-        simpleclans = plugin.getServer().getPluginManager().getPlugin("SimpleClans");
-        if (simpleclans != null) {
-//	    	clanmanager = ((SimpleClans)simpleclans).getClanManager();
+            plotapi = new PlotAPI();
         }
         // GreifPrevention
         griefprevention = plugin.getServer().getPluginManager().getPlugin("GriefPrevention");
@@ -94,77 +92,50 @@ public class Dependency {
             } catch (Exception e) {
             }
         }
-		/*
-		if (towny != null){
-			try {
-				if (TownyUniverse.getDataSource().getWorld(block.getWorld().getName()).isUsingTowny()){
-					// In town only residents can
-					if (!PlayerCacheUtil.getCachePermission(player, block.getLocation(), block.getTypeId(), (byte) 0, ActionType.BUILD)) return true;
-					// Wilderness permissions
-					if (TownyUniverse.isWilderness(block)){ // It is wilderness here
-						if (!player.hasPermission("lockettepro.towny.wilds")) return true;
-					}
-				}
-			} catch (Exception e) {}
-		}
-		if (factions != null){
-			try {
-				Faction faction = BoardColl.get().getFactionAt(PS.valueOf(block));
-				if (faction != null && !faction.isNone()){
-					MPlayer mplayer = MPlayer.get(player);
-					if (mplayer != null && !mplayer.isOverriding()){
-						Faction playerfaction = mplayer.getFaction();
-						if (faction != playerfaction){
-							return true;
-						}
-					}
-				}
-			} catch (Exception e){}
-		}
-		if (askyblock != null){
-			try {
-				Island island = ASkyBlockAPI.getInstance().getIslandAt(block.getLocation());
-				if (island != null) {
-					for (UUID memberuuid : island.getMembers()){
-						if (memberuuid.equals(player.getUniqueId())) return false;
-					}
-					return true;
-				}
-			} catch (Exception e){}
-		}
-		if (plotsquared != null){
-			try {
-				Plot plot = plotapi.getPlot(block.getLocation());
-				if (plot != null){
-					for (UUID uuid : plot.getOwners()){
-						if (uuid.equals(player.getUniqueId())) return false;
-					}
-					for (UUID uuid : plot.getMembers()){
-						if (uuid.equals(player.getUniqueId())) return false;
-					}
-					for (UUID uuid : plot.getTrusted()){
-						if (uuid.equals(player.getUniqueId())) return false;
-					}
-					return true;
-				}
-			} catch (Exception e){}
-		}
-		if (simpleclans != null){
-			// TODO or not todo
-		}
-		if (griefprevention != null){
-			Claim claim = GriefPrevention.instance.dataStore.getClaimAt(block.getLocation(), false, null);
-			if (claim != null){
-				if (claim.allowBuild(player, Material.WALL_SIGN) != null) return true;
-			}
-		}
-		 */
+        if (towny != null) {
+            try {
+                if (TownyUniverse.getDataSource().getWorld(block.getWorld().getName()).isUsingTowny()) {
+                    // In town only residents can
+                    if (!PlayerCacheUtil.getCachePermission(player, block.getLocation(), block.getType(), TownyPermission.ActionType.BUILD))
+                        return true;
+                    // Wilderness permissions
+                    if (TownyUniverse.isWilderness(block)) { // It is wilderness here
+                        if (!player.hasPermission("lockettepro.towny.wilds")) return true;
+                    }
+                }
+            } catch (Exception e) {
+            }
+        }
+        if (plotsquared != null) {
+            try {
+                Location location = block.getLocation();
+                Plot plot = Plot.getPlot(new com.github.intellectualsites.plotsquared.plot.object.Location(location.getWorld().getName(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), location.getYaw(), location.getPitch()));
+                if (plot != null) {
+                    for (UUID uuid : plot.getOwners()) {
+                        if (uuid.equals(player.getUniqueId())) return false;
+                    }
+                    for (UUID uuid : plot.getMembers()) {
+                        if (uuid.equals(player.getUniqueId())) return false;
+                    }
+                    for (UUID uuid : plot.getTrusted()) {
+                        if (uuid.equals(player.getUniqueId())) return false;
+                    }
+                    return true;
+                }
+            } catch (Exception e) {
+            }
+        }
+        if (griefprevention != null) {
+            Claim claim = GriefPrevention.instance.dataStore.getClaimAt(block.getLocation(), false, null);
+            if (claim != null) {
+                if (claim.allowBuild(player, Material.WALL_SIGN) != null) return true;
+            }
+        }
         return false;
 
     }
 
     public static boolean isTownyTownOrNationOf(String line, Player player) {
-		/*
 		if (towny != null){
 			String name = player.getName();
 			try {
@@ -175,18 +146,6 @@ public class Dependency {
 				if (line.equals("[" + nation.getName() + "]")) return true;
 			} catch (Exception e) {}
 		}
-		if (factions != null){
-			try {
-				MPlayer mplayer = MPlayer.get(player);
-				if (mplayer != null){
-					Faction faction = mplayer.getFaction();
-					if (faction != null){
-						if (line.equals("[" + faction.getName() + "]")) return true;
-					}
-				}
-			} catch (Exception e) {}
-		}
-		*/
         return false;
     }
 
@@ -208,22 +167,6 @@ public class Dependency {
         if (team != null) {
             if (line.equals("[" + team.getName() + "]")) return true;
         }
-        return false;
-    }
-
-    public static boolean isSimpleClanOf(String line, Player player) {
-		/*
-		if (simpleclans == null) return false;
-		try {
-			ClanPlayer clanplayer = ((SimpleClans)simpleclans).getClanManager().getClanPlayer(player);
-			if (clanplayer != null){
-				Clan clan = clanplayer.getClan();
-				if (clan != null){
-					if (line.equals("[" + clan.getTag() + "]")) return true;
-				}
-			}
-		} catch (Exception e){}
-		 */
         return false;
     }
 
