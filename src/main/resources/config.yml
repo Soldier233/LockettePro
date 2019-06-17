@@ -41,6 +41,6 @@ lockables:
 - JUNGLE_DOOR
 - ACACIA_DOOR
 - DARK_OAK_DOOR
-- IRON_DOOR_BLOCK
+- IRON_DOOR
 protection-exempt:
 - nothing
