@@ -6,7 +6,13 @@ import com.github.intellectualsites.plotsquared.api.PlotAPI;
 import com.github.intellectualsites.plotsquared.plot.object.Plot;
 import com.palmergames.bukkit.towny.object.*;
 import com.palmergames.bukkit.towny.utils.PlayerCacheUtil;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.protection.flags.Flags;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
+import com.sk89q.worldguard.protection.regions.RegionQuery;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import net.milkbowl.vault.permission.Permission;
@@ -74,7 +80,13 @@ public class Dependency {
     @SuppressWarnings("deprecation")
     public static boolean isProtectedFrom(Block block, Player player) {
         if (worldguard != null) {
-            if (!worldguard.canBuild(player, block)) return true;
+            LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
+            com.sk89q.worldedit.util.Location loc = BukkitAdapter.adapt(block.getLocation());
+            RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+            RegionQuery query = container.createQuery();
+            if (!query.testState(loc, localPlayer, Flags.BUILD)) {
+                return true;
+            }
         }
         if (residence != null) {
             try { // 1st try
@@ -136,16 +148,17 @@ public class Dependency {
     }
 
     public static boolean isTownyTownOrNationOf(String line, Player player) {
-		if (towny != null){
-			String name = player.getName();
-			try {
-				Resident resident = TownyUniverse.getDataSource().getResident(name);
-				Town town = resident.getTown();
-				if (line.equals("[" + town.getName() + "]")) return true;
-				Nation nation = town.getNation();
-				if (line.equals("[" + nation.getName() + "]")) return true;
-			} catch (Exception e) {}
-		}
+        if (towny != null) {
+            String name = player.getName();
+            try {
+                Resident resident = TownyUniverse.getDataSource().getResident(name);
+                Town town = resident.getTown();
+                if (line.equals("[" + town.getName() + "]")) return true;
+                Nation nation = town.getNation();
+                if (line.equals("[" + nation.getName() + "]")) return true;
+            } catch (Exception e) {
+            }
+        }
         return false;
     }
 
